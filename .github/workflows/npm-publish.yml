@@ -1,0 +1,71 @@
+name: NPM Publish
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: Build and publish @dixydo/roomkit + @dixydo/roomkit-react + @dixydo/roomkit-vue
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # for npm publish --provenance (Sigstore signing)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      # 1. Core SDK (no peer dep on anything else in the repo)
+      - name: Publish @dixydo/roomkit
+        working-directory: sdk
+        run: |
+          npm install
+          npm run build
+          pkg=$(node -p "require('./package.json').name")
+          ver=$(node -p "require('./package.json').version")
+          if [ -n "$(npm view "$pkg@$ver" version 2>/dev/null)" ]; then
+            echo "$pkg@$ver already on npm; skipping publish."
+          else
+            npm publish --access public --provenance
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # 2. React wrapper (peerDep on @dixydo/roomkit — installed from local
+      #    via file: in devDeps for build; the publish manifest declares
+      #    a real version range so consumers get the npm version).
+      - name: Publish @dixydo/roomkit-react
+        working-directory: sdk-react
+        run: |
+          npm install
+          npm run build
+          pkg=$(node -p "require('./package.json').name")
+          ver=$(node -p "require('./package.json').version")
+          if [ -n "$(npm view "$pkg@$ver" version 2>/dev/null)" ]; then
+            echo "$pkg@$ver already on npm; skipping publish."
+          else
+            npm publish --access public --provenance
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # 3. Vue wrapper
+      - name: Publish @dixydo/roomkit-vue
+        working-directory: sdk-vue
+        run: |
+          npm install
+          npm run build
+          pkg=$(node -p "require('./package.json').name")
+          ver=$(node -p "require('./package.json').version")
+          if [ -n "$(npm view "$pkg@$ver" version 2>/dev/null)" ]; then
+            echo "$pkg@$ver already on npm; skipping publish."
+          else
+            npm publish --access public --provenance
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

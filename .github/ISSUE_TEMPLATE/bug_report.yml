@@ -1,0 +1,63 @@
+name: Bug report
+description: Something isn't working as documented
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report! For security vulnerabilities, please follow
+        [SECURITY.md](../blob/main/SECURITY.md) instead of opening a public issue.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+      placeholder: I joined a room with two tabs and the second peer's video never appeared...
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run `make run`
+        2. Open sdk/examples/vanilla-demo.html in two tabs
+        3. Join room "x"
+        4. ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Server logs
+      description: Relevant roomkit output (run with `ROOMKIT_LOG_LEVEL=debug` for more detail).
+      render: shell
+  - type: input
+    id: version
+    attributes:
+      label: roomkit version
+      description: Image tag, release tag, or `git rev-parse --short HEAD`.
+    validations:
+      required: true
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: How are you running it?
+      options:
+        - "make run (local binary)"
+        - "docker compose"
+        - "one-click install.sh"
+        - "other"
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser / OS
+      placeholder: Chrome 124 on macOS 14, Safari on iOS 17, ...
+  - type: textarea
+    id: config
+    attributes:
+      label: Relevant config
+      description: ALLOWED_ORIGINS, TURN, recording mode, auth on/off — redact secrets.
+      render: shell

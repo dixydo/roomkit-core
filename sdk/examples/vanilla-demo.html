@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Roomkit SDK — vanilla demo</title>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #18181b; color: #fafafa;
+      margin: 0; padding: 16px;
+    }
+    h1 { margin: 0 0 16px; font-size: 18px; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center; }
+    input, button {
+      padding: 8px 12px; font: inherit;
+      background: #27272a; color: #fafafa;
+      border: 1px solid #3f3f46; border-radius: 6px;
+    }
+    button { cursor: pointer; }
+    button.danger { background: #dc2626; border-color: #ef4444; }
+    button.active { background: #4f46e5; border-color: #6366f1; }
+    .tiles {
+      display: grid; gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+    .tile {
+      position: relative; background: #000;
+      border: 1px solid #27272a; border-radius: 8px; overflow: hidden;
+      aspect-ratio: 16 / 9;
+    }
+    .tile video { width: 100%; height: 100%; object-fit: cover; }
+    .label {
+      position: absolute; bottom: 6px; left: 6px;
+      background: rgba(0,0,0,0.6); padding: 2px 6px;
+      font-size: 11px; border-radius: 4px;
+    }
+    #status { color: #a1a1aa; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Roomkit SDK — vanilla JS demo</h1>
+
+  <div class="row">
+    <input id="serverUrl" placeholder="Server URL" value="http://localhost:8080" size="28">
+    <input id="roomId" placeholder="Room ID" value="sdk-demo">
+    <button id="join">Join</button>
+    <button id="leave" disabled>Leave</button>
+    <button id="mic" disabled>Mic</button>
+    <button id="cam" disabled>Camera</button>
+    <button id="share" disabled>Share screen</button>
+    <button id="rec" disabled>Record</button>
+    <span id="status"></span>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <!--
+    Loads the locally-built UMD bundle. Build it first:
+        cd sdk && npm install && npm run build
+    Then open this file directly in a browser and point "Server URL" at a
+    running roomkit server. To try it without a build step, swap the src for
+    a CDN: https://unpkg.com/@dixydo/roomkit
+  -->
+  <script src="../dist/roomkit-sdk.umd.cjs"></script>
+  <script>
+    /** @type {import('@dixydo/roomkit').RoomkitRoom | null} */
+    let room = null
+
+    const $ = (id) => document.getElementById(id)
+    const status = (s) => { $('status').textContent = s }
+
+    function makeTile(id, label, muted) {
+      const wrap = document.createElement('div')
+      wrap.className = 'tile'
+      wrap.id = `tile-${id}`
+      const video = document.createElement('video')
+      video.autoplay = true
+      video.playsInline = true
+      if (muted) video.muted = true
+      wrap.appendChild(video)
+      const tag = document.createElement('div')
+      tag.className = 'label'
+      tag.textContent = label
+      wrap.appendChild(tag)
+      $('tiles').appendChild(wrap)
+      return video
+    }
+
+    function removeTile(id) {
+      document.getElementById(`tile-${id}`)?.remove()
+    }
+
+    $('join').onclick = async () => {
+      const roomId = $('roomId').value.trim() || 'sdk-demo'
+      const serverUrl = $('serverUrl').value.trim() || 'http://localhost:8080'
+      room = new Roomkit.RoomkitRoom({ serverUrl, roomId })
+
+      room.on('joined', ({ peerId }) => {
+        status(`Joined as ${peerId.slice(0, 8)}`)
+        const v = makeTile('me', 'You', true)
+        room.attachLocalVideo(v)
+      })
+      room.on('peerJoined', ({ peerId }) => status(`Peer ${peerId.slice(0, 6)} joined`))
+      room.on('peerLeft', ({ peerId }) => removeTile(peerId))
+      room.on('trackPublished', ({ peerId, stream }) => {
+        const v = makeTile(peerId, `Peer ${peerId.slice(0, 6)}`, false)
+        v.srcObject = stream
+      })
+      room.on('trackUnpublished', ({ peerId }) => removeTile(peerId))
+      room.on('chatMessage', (m) => console.log('[chat]', m))
+      room.on('recordingStateChange', (r) => {
+        status(`Recording: ${r.state}${r.url ? ` — ${r.url}` : ''}`)
+        $('rec').textContent = r.state === 'recording' ? 'Stop record' : 'Record'
+        $('rec').className = r.state === 'recording' ? 'danger' : ''
+      })
+      room.on('error', (e) => status(`Error: ${e.message}`))
+      room.on('left', () => {
+        status('Left')
+        $('tiles').innerHTML = ''
+      })
+
+      try {
+        await room.join({ audio: true, video: true })
+        for (const btn of ['leave', 'mic', 'cam', 'share', 'rec']) $(btn).disabled = false
+        $('join').disabled = true
+      } catch (e) {
+        status(`Join failed: ${e.message}`)
+      }
+    }
+
+    $('leave').onclick = async () => {
+      await room?.leave()
+      room = null
+      for (const btn of ['leave', 'mic', 'cam', 'share', 'rec']) $(btn).disabled = true
+      $('join').disabled = false
+    }
+
+    $('mic').onclick = () => {
+      if (!room) return
+      room.setMicEnabled(!room.micEnabled)
+      $('mic').className = room.micEnabled ? '' : 'danger'
+    }
+
+    $('cam').onclick = () => {
+      if (!room) return
+      room.setCamEnabled(!room.cameraEnabled)
+      $('cam').className = room.cameraEnabled ? '' : 'danger'
+    }
+
+    $('share').onclick = async () => {
+      if (!room) return
+      await room.toggleScreenShare()
+      $('share').className = room.screenSharing ? 'active' : ''
+    }
+
+    $('rec').onclick = () => {
+      if (!room) return
+      if (room.recording.state === 'recording') room.stopRecording()
+      else room.startRecording()
+    }
+  </script>
+</body>
+</html>

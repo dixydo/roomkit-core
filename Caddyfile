@@ -1,0 +1,7 @@
+# DOMAIN env var resolves to the host Caddy listens on.
+# - For "localhost" (default) Caddy serves a self-signed local cert.
+# - For a real domain Caddy auto-provisions a Let's Encrypt cert.
+{$DOMAIN:localhost} {
+    encode gzip
+    reverse_proxy roomkit:8080
+}

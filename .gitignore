@@ -1,0 +1,10 @@
+dist/
+*.log
+.env
+.DS_Store
+.idea/
+.omc/
+*.tgz
+.claude/settings.local.json
+node_modules/
+CLAUDE.md

@@ -1,0 +1,68 @@
+services:
+  roomkit:
+    build:
+      context: .
+      args:
+        VERSION: ${VERSION:-dev}
+    image: ${IMAGE:-dixydo/roomkit}:${VERSION:-latest}
+    pull_policy: build
+    restart: unless-stopped
+    expose:
+      - "8080"
+    # TURN ports are only used when ROOMKIT_TURN_PUBLIC_IP is set.
+    # Leaving them mapped when TURN is disabled is harmless.
+    ports:
+      - "${ROOMKIT_TURN_PORT:-3478}:3478/udp"
+      - "${ROOMKIT_TURN_MIN_PORT:-49152}-${ROOMKIT_TURN_MAX_PORT:-49200}:49152-49200/udp"
+    networks:
+      - web
+    environment:
+      ROOMKIT_PUBLIC_URL: ${ROOMKIT_PUBLIC_URL:-}
+      ROOMKIT_ALLOWED_ORIGINS: ${ROOMKIT_ALLOWED_ORIGINS:-}
+      ROOMKIT_ROOM_TOKEN_SECRET: ${ROOMKIT_ROOM_TOKEN_SECRET:-}
+      ROOMKIT_TURN_PUBLIC_IP: ${ROOMKIT_TURN_PUBLIC_IP:-}
+      ROOMKIT_TURN_SECRET: ${ROOMKIT_TURN_SECRET:-}
+      ROOMKIT_TURN_PORT: ${ROOMKIT_TURN_PORT:-3478}
+      ROOMKIT_TURN_MIN_PORT: ${ROOMKIT_TURN_MIN_PORT:-49152}
+      ROOMKIT_TURN_MAX_PORT: ${ROOMKIT_TURN_MAX_PORT:-49200}
+      ROOMKIT_ICE_SERVERS: ${ROOMKIT_ICE_SERVERS:-}
+      # Recording — local mode (default: enabled, files served from volume)
+      ROOMKIT_REC_ENABLED: ${ROOMKIT_REC_ENABLED:-true}
+      ROOMKIT_REC_WORKDIR: /var/lib/roomkit/recordings
+      ROOMKIT_REC_MAX_HOURS: ${ROOMKIT_REC_MAX_HOURS:-8}
+      # Recording — S3 mode (optional; overrides local mode when configured)
+      ROOMKIT_S3_ENDPOINT: ${ROOMKIT_S3_ENDPOINT:-}
+      ROOMKIT_S3_REGION: ${ROOMKIT_S3_REGION:-us-east-1}
+      ROOMKIT_S3_BUCKET: ${ROOMKIT_S3_BUCKET:-}
+      ROOMKIT_S3_ACCESS_KEY: ${ROOMKIT_S3_ACCESS_KEY:-}
+      ROOMKIT_S3_SECRET_KEY: ${ROOMKIT_S3_SECRET_KEY:-}
+      ROOMKIT_S3_PUBLIC_BASE: ${ROOMKIT_S3_PUBLIC_BASE:-}
+      ROOMKIT_S3_OBJECT_ACL: ${ROOMKIT_S3_OBJECT_ACL:-}
+    volumes:
+      - roomkit_recordings:/var/lib/roomkit/recordings
+    command: ["--addr", ":8080", "--log-level", "${LOG_LEVEL:-info}"]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - roomkit
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - web
+
+networks:
+  web:
+
+volumes:
+  caddy_data:
+  caddy_config:
+  roomkit_recordings:

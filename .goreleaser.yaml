@@ -1,0 +1,53 @@
+# GoReleaser config — builds standalone roomkit binaries and publishes them as
+# GitHub Release assets on every `v*` tag. See https://goreleaser.com
+version: 2
+
+project_name: roomkit
+
+builds:
+  - id: roomkit
+    main: ./cmd/roomkit
+    binary: roomkit
+    # Pure-Go (Pion, embedded TURN); ffmpeg is an optional runtime dep, never
+    # linked. CGO off keeps the binaries fully static and portable.
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: roomkit
+    name_template: "roomkit_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^ci:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  draft: false
+  prerelease: auto
+  name_template: "roomkit {{ .Tag }}"

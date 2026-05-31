@@ -1,0 +1,19 @@
+.git
+.gitignore
+.github
+.idea
+.vscode
+.DS_Store
+dist/
+*.log
+.env
+.env.local
+README.md
+
+# SDK artifacts: not needed to build the Go binary
+sdk/node_modules
+sdk/dist
+sdk-react/node_modules
+sdk-react/dist
+sdk-vue/node_modules
+sdk-vue/dist
