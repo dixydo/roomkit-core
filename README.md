@@ -303,6 +303,25 @@ S3-compatible bucket.
 codec-specific. Restricting the MediaEngine to VP8/Opus keeps recording
 predictable across browsers. H264/VP9 + simulcast are on the roadmap.
 
+## Roadmap
+
+roomkit stays a single readable binary — every item below ships without adding external services.
+
+**Next**
+- [ ] H.264 + VP9 codecs (currently VP8-only)
+- [ ] Simulcast — scale past ~6 publishers per room
+- [ ] Congestion control (loss-based BWE) for stable calls on poor networks
+- [ ] First-class screen sharing in the SDKs
+
+**Then**
+- [ ] Data channel API for chat, reactions, and custom signaling
+- [ ] Server webhooks (participant joined/left, recording finished)
+- [ ] Room control API (kick, remote mute, lock, max-participants)
+- [ ] Active speaker detection events
+- [ ] Automatic reconnection with ICE restart
+
+Want something prioritized? [Open an issue](https://github.com/dixydo/roomkit-core/issues).
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).
