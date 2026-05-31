@@ -63,6 +63,11 @@ open examples/vanilla-demo.html      # then point it at http://localhost:8080
 Open it in two browser tabs (or two devices), join the same room, and you have a
 call. Use it as a copy-paste starting point for your own UI.
 
+**Want a fuller example?** [**roomkit-demo**](https://github.com/dixydo/roomkit-demo)
+is a standalone Vue 3 app showing both integration styles (`<RoomkitCall>` drop-in
+and the `useRoomkit` composable) plus a tiny Express server that signs HS256 room
+tokens — point it at this server and you have an end-to-end call in minutes.
+
 ### 3. Add a video call to your site
 
 Point any of these at `http://localhost:8080` (or your deployed URL).
@@ -263,6 +268,7 @@ Full configuration reference: [docs/DEPLOY.md](./docs/DEPLOY.md#configuration-re
 |---|---|
 | [**DEPLOY.md**](./docs/DEPLOY.md) | Production VPS deploy + TURN + S3 + auto-deploy |
 | [**ARCHITECTURE.md**](./docs/ARCHITECTURE.md) | SFU design, signaling protocol, recording pipeline |
+| [**roomkit-demo**](https://github.com/dixydo/roomkit-demo) | Standalone Vue 3 example app + token server — embed roomkit end-to-end |
 
 ## FAQ
 
